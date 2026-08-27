@@ -22,6 +22,11 @@ void setup() {
 
 void loop() {
   float umidade = dht.readHumidity();
+  if (umidade > 10){
+    digitalWrite(rele, 1);
+  }else{
+    digitalWrite(rele, 0);
+  } 
   somaLeituras = somaLeituras + umidade;
   qtdLeituras = qtdLeituras + 1;
   media = somaLeituras / qtdLeituras;
