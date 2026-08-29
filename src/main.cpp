@@ -4,13 +4,15 @@
 
 int rele = 8;
 int sensor = 10;
-float somaLeituras = 0;
-float qtdLeituras = 0;
-float media = 0;
-int pinoLed = 13;
+float leituras[10] = {0};
+int idxLeitura = 0;
+float ultimaUmidade = 0;
+unsigned long ultimaLeitura = 0;
+unsigned long ultimoSerial = 0;
+unsigned long intervalo = 120000;
 
 DHT dht(sensor, DHT11);
-PiscaLed led(13);
+PiscaLed led(13, 125, 2000);
 
 void setup() {
   dht.begin();
@@ -18,23 +20,38 @@ void setup() {
   pinMode(rele, OUTPUT);
   pinMode(sensor, INPUT);
   led.begin();
+  ultimaLeitura = millis() - intervalo; // força leitura imediata ao ligar
 }
 
 void loop() {
-  float umidade = dht.readHumidity();
-  if (umidade > 10){
-    digitalWrite(rele, 1);
-  }else{
-    digitalWrite(rele, 0);
-  } 
-  somaLeituras = somaLeituras + umidade;
-  qtdLeituras = qtdLeituras + 1;
-  media = somaLeituras / qtdLeituras;
-  Serial.print("Umidade: ");
-  Serial.println(umidade);
-  Serial.print("Media ate o momento: ");
-  Serial.println(media);
-  delay(1000);
   led.atualizar();
 
+  if (millis() - ultimoSerial >= 1000) {
+    ultimoSerial = millis();
+    Serial.print("Umidade: ");
+    Serial.print(ultimaUmidade);
+    Serial.print(" | Rele: ");
+    Serial.println(digitalRead(rele));
+  }
+
+  if (millis() - ultimaLeitura >= intervalo) {
+    ultimaLeitura = millis();
+    float umidade = dht.readHumidity();
+    ultimaUmidade = umidade;
+    leituras[idxLeitura] = umidade;
+    idxLeitura = (idxLeitura + 1) % 10;
+    float media = 0;
+    for (int i = 0; i < 10; i++) media += leituras[i];
+    media /= 10;
+    Serial.print("Media ate o momento: ");
+    Serial.println(media);
+    if (umidade > 13){
+      digitalWrite(rele, 1);
+      intervalo = 120000;
+    }else{
+      digitalWrite(rele, 0);
+      intervalo = 1000;
+    }
+  }
 }
+
