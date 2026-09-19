@@ -18,6 +18,7 @@ float ultimaUmidade = 0;
 unsigned long ultimaLeitura = 0;
 unsigned long ultimoSerial = 0;
 unsigned long intervalo = 120000;
+int falhasConsecutivas = 0;
 
 DHT dht(sensor, DHT22);
 PiscaLed led(10, 125, 2000);
@@ -46,6 +47,27 @@ void loop() {
   if (millis() - ultimaLeitura >= intervalo) {
     ultimaLeitura = millis();
     float umidade = dht.readHumidity();
+
+    if (isnan(umidade)) {
+      falhasConsecutivas++;
+
+      Serial.print("Falha no DHT: ");
+      Serial.print(falhasConsecutivas);
+      Serial.println("/5");
+
+      if (falhasConsecutivas >= 5) {
+        Serial.println("Reiniciando Arduino...");
+        Serial.flush(); // espera a mensagem terminar de sair
+
+        wdt_enable(WDTO_15MS);
+        while (true) {
+          // Sem renovar o watchdog: ele reinicia o Arduino.
+        }
+      }
+    } else {
+      falhasConsecutivas = 0; // leitura válida zera a contagem
+    }
+
     ultimaUmidade = umidade;
     leituras[idxLeitura] = umidade;
     idxLeitura = (idxLeitura + 1) % 10;
@@ -59,7 +81,7 @@ void loop() {
       intervalo = 120000;
     }else{
       digitalWrite(rele, 0);
-      intervalo = 1000;
+      intervalo = 2000;
     }
   }
   wdt_reset();

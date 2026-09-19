@@ -233,3 +233,11 @@ Acrescentar entradas datadas com novas informações, alterações e resultados 
 
 - O usuário perguntou em qual perna do LED deve ficar o resistor. Orientado que pode ficar no lado do ânodo ou do cátodo, desde que em série; resistor comum não tem polaridade. Para LED comum com pernas não cortadas, a longa normalmente é o ânodo e a curta é o cátodo.
 - Não foram confirmados modelo do LED, valor do resistor ou montagem realizada. Nenhum firmware alterado.
+
+## Reinício após cinco leituras NaN consecutivas — 2026-09-19
+
+- O usuário primeiro solicitou explicação e código na conversa, e corrigiu explicitamente a intenção do assistente de editar sem solicitação. Perguntas como “como fazer?” devem ser respondidas com instruções; não autorizam implementar. Nenhum arquivo foi alterado na tentativa interrompida. Depois de receber os trechos, o usuário autorizou: “ok,, adicione no código”.
+- Implementados os três trechos apresentados em `src/main.cpp`: contador global `falhasConsecutivas`, incremento em leitura NaN e zeragem em leitura válida; na quinta falha consecutiva, mensagem Serial, `Serial.flush()`, `wdt_enable(WDTO_15MS)` e espera sem renovar o watchdog para provocar reset.
+- Intervalo do ramo abaixo/igual ao limite ou NaN alterado de 1000 para 2000 ms, para não contar resultado reutilizado pela biblioteca DHT como nova aquisição. Mantidos intervalo de 120 segundos acima do limite, leitura inicial imediata e cálculo da média existente, que ainda admite NaN.
+- Código observado antes da edição já usava LED no pino 10, DHT22 no pino 7, relé no pino 6 e limite 80; esses valores foram preservados. `platformio.ini` já estava sem o `+` solto visto em uma consulta anterior; não foi alterado nesta implementação.
+- Compilação `platformio run` para Uno concluída com sucesso: 376 bytes de RAM e 5986 bytes de flash. Não houve upload nem teste físico do reset ou confirmação de recuperação do sensor. O reset do Arduino não corta a alimentação do DHT; a causa da falha permanece não confirmada.
