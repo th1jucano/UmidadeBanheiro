@@ -1,17 +1,11 @@
 #include <Arduino.h>
 #include <DHT.h>
 #include <PiscaLed.h>
-#include <avr/wdt.h>
 
-void desativarWatchdogAoIniciar() __attribute__((naked, used, section(".init3")));
-void desativarWatchdogAoIniciar() {
-  MCUSR = 0;
-  wdt_disable();
-}
+int rele = 6
 
-int rele = 6;
+;
 int sensor = 7;
-int leituraUmidade = 80;
 float leituras[10] = {0};
 int idxLeitura = 0;
 float ultimaUmidade = 0;
@@ -19,8 +13,8 @@ unsigned long ultimaLeitura = 0;
 unsigned long ultimoSerial = 0;
 unsigned long intervalo = 120000;
 
-DHT dht(sensor, DHT22);
-PiscaLed led(10, 125, 2000);
+DHT dht(sensor, DHT11);
+PiscaLed led(13, 125, 2000);
 
 void setup() {
   dht.begin();
@@ -29,7 +23,6 @@ void setup() {
   pinMode(sensor, INPUT);
   led.begin();
   ultimaLeitura = millis() - intervalo; // força leitura imediata ao ligar
-  wdt_enable(WDTO_8S);
 }
 
 void loop() {
@@ -54,7 +47,7 @@ void loop() {
     media /= 10;
     Serial.print("Media ate o momento: ");
     Serial.println(media);
-    if (umidade > leituraUmidade){
+    if (umidade > 17){
       digitalWrite(rele, 1);
       intervalo = 120000;
     }else{
@@ -62,7 +55,5 @@ void loop() {
       intervalo = 1000;
     }
   }
-  wdt_reset();
 }
 
- 
